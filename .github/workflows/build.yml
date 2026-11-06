@@ -18,6 +18,7 @@ env:
 jobs:
   linux:
     name: Linux
+    timeout-minutes: 60
     runs-on: ubuntu-22.04      # старый glibc: плагин запустится и на старых дистрибутивах
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +48,7 @@ jobs:
 
   windows:
     name: Windows
+    timeout-minutes: 60
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,6 +87,7 @@ jobs:
 
   macos:
     name: macOS
+    timeout-minutes: 60
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4

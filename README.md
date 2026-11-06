@@ -1,12 +1,12 @@
 # SandVerb
 
-[![Build](https://github.com/gooozmen/vst/actions/workflows/build.yml/badge.svg)](https://github.com/gooozmen/vst/actions/workflows/build.yml)
+[![Build](https://github.com/gooozmen/SandVerb/actions/workflows/build.yml/badge.svg)](https://github.com/gooozmen/SandVerb/actions/workflows/build.yml)
 
 Аудио-плагин (VST3) на JUCE 8.0.4 для Windows, Linux и macOS. Реверб, рядом с ним петля из прошлых кадров (FEEDBACK) и параллельная ей «песочная» ветка SAND: педаль Drive и биткрашер. Любой блок можно включать и выключать, настройки блока открываются по нажатию на него в схеме сигнала.
 
 ## Установка
 
-Скачайте файл для своей системы со страницы [Releases](https://github.com/gooozmen/vst/releases/latest). Рядом с каждым файлом лежит контрольная сумма `.sha256`.
+Скачайте файл для своей системы со страницы [Releases](https://github.com/gooozmen/SandVerb/releases/latest). Рядом с каждым файлом лежит контрольная сумма `.sha256`.
 
 После установки перезапустите DAW или пересканируйте плагины.
 
