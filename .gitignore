@@ -1,0 +1,27 @@
+# сборка
+/build/
+/build-*/
+/cmake-build-*/
+/out/
+/dist/
+CMakeUserPresets.json
+compile_commands.json
+.cache/
+
+# IDE и редакторы
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# логи и временные файлы
+*.log
+*.tmp
+
+# Claude Code
+.claude/
+
+# рабочие материалы
+/1793800808182_image.png

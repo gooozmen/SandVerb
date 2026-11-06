@@ -1,0 +1,125 @@
+name: Build
+
+# Сборка на каждый push и pull request. По тегу v* (например, v0.1.0) все пакеты
+# дополнительно выкладываются в GitHub Releases.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write        # нужен только job release
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-22.04      # старый glibc: плагин запустится и на старых дистрибутивах
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libasound2-dev libx11-dev libxcomposite-dev libxcursor-dev \
+            libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libfreetype-dev libfontconfig1-dev \
+            libgl1-mesa-dev
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DSANDVERB_COPY_PLUGIN=OFF
+
+      - name: Build
+        run: cmake --build build --target SandVerb_VST3
+
+      - name: Package
+        run: scripts/package.sh linux
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -A x64 -DSANDVERB_COPY_PLUGIN=OFF
+
+      - name: Build
+        run: cmake --build build --config Release --target SandVerb_VST3
+
+      - name: Package (installer .exe and .vst3 zip)
+        shell: pwsh
+        run: |
+          $ver = (Select-String -Path CMakeLists.txt -Pattern '^project\(SandVerb VERSION ([0-9.]+)\)').Matches[0].Groups[1].Value
+          $src = (Resolve-Path build/SandVerb_artefacts/Release/VST3/SandVerb.vst3).Path
+          New-Item -ItemType Directory -Force dist | Out-Null
+
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+            $env:PATH += ";C:\Program Files (x86)\NSIS"
+          }
+          $setup = Join-Path $PWD "dist/SandVerb-$ver-Windows-Setup.exe"
+          makensis /DSRC="$src" /DVERSION=$ver /DOUT="$setup" installers/windows/SandVerb.nsi
+          if ($LASTEXITCODE -ne 0) { throw "makensis failed" }
+
+          Compress-Archive -Path $src -DestinationPath "dist/SandVerb-$ver-windows-x64-vst3.zip"
+
+          Get-ChildItem dist -File | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" | Set-Content "$($_.FullName).sha256"
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*
+
+  macos:
+    name: macOS
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Configure (universal: arm64 + x86_64)'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DSANDVERB_COPY_PLUGIN=OFF
+
+      - name: Build
+        run: cmake --build build --target SandVerb_VST3 -j 4
+
+      - name: 'Ad-hoc sign (Apple Silicon не загружает неподписанные бинарники)'
+        run: codesign --force --deep --sign - build/SandVerb_artefacts/Release/VST3/SandVerb.vst3
+
+      - name: Package
+        run: scripts/package.sh macos
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            dist/*.zip
+            dist/*.sha256
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
