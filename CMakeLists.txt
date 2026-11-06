@@ -6,7 +6,7 @@ if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "")
 endif()
 
-project(SandVerb VERSION 0.1.0)
+project(SandVerb VERSION 0.1.1)
 
 # Windows: статический рантайм, чтобы плагин работал без установки Visual C++ Redistributable
 if(MSVC)
